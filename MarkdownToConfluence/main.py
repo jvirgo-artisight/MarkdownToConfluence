@@ -6,47 +6,47 @@ from confluence import create_page
 from confluence import update_page_content
 from confluence import upload_attachment
 from utils import convert_all_md_img_to_confluence_img
-import  MarkdownToConfluence.confluence.convert_markdown as conver_markdown
+import MarkdownToConfluence.confluence.convert_markdown as conver_markdown
 import MarkdownToConfluence.globals
 from utils.page_file_info import get_page_name_from_path, get_parent_name_from_path
-import os
+from MarkdownToConfluence.utils.config import get_config  # ✅ Import config
+
 import subprocess
 import markdown
 import module_loader
+import os
+import sys
 
-SPACE_KEY = os.environ.get("INPUT_CONFLUENCE_SPACE_KEY")
+config = get_config()  # ✅ Initialize config
+SPACE_KEY = config["SPACE_KEY"]
 
 space_obj = {
-        "key": SPACE_KEY,
-    }
+    "key": SPACE_KEY,
+}
 
-def upload_documentation(path_name:str, root:str):
-    response=""
-    # If a directory is given as path, assume index.md as file
-    if(os.path.isdir(path_name)):
+def upload_documentation(path_name: str, root: str):
+    response = ""
+    if os.path.isdir(path_name):
         path_name += "/index.md"
 
     page_name, parent_name = conver_markdown.convert(path_name, root)
 
-    if(os.environ.get("INPUT_SHOULD_UPLOAD") == 'true'):
-            
-        #print(f"Uploading {page_name} with {parent_name} as parent")
-        #If the page already exists, just update it
-        if(page_exists_in_space(page_name, SPACE_KEY)):
+    if config["SHOULD_UPLOAD"]:
+        if page_exists_in_space(page_name, SPACE_KEY):
             try:
                 page_id = get_page_id(page_name, SPACE_KEY)
                 response = update_page_content(path_name, page_name, page_id, space_obj)
-                if(response.status_code == 200):
+                if response.status_code == 200:
                     print(f"Updated {page_name} with {parent_name} as parent")
             except PageNotFoundError as e:
                 print(e)
-        #Else, create the page
         else:
-            if(parent_name != ""): #Create page as a child page, if there is a parent
+            if parent_name != "":
                 try:
-                    if(not page_exists_in_space(parent_name, SPACE_KEY)): #If the parent page doesn't exists, create it
-                        print(f"uploading parent: {parent_name}")
-                        if(file_name != "index"):
+                    if not page_exists_in_space(parent_name, SPACE_KEY):
+                        print(f"Uploading parent: {parent_name}")
+                        file_name = basename(path_name).replace(".md", "")
+                        if file_name != "index":
                             subprocess.call(["bash", "/MarkdownToConfluence/convert.sh", f"{dirname(path_name)}/index.md"])
                         else:
                             subprocess.call(["bash", "/MarkdownToConfluence/convert.sh", f"{dirname(dirname(path_name))}/index.md"])
@@ -55,11 +55,12 @@ def upload_documentation(path_name:str, root:str):
                 except PageNotFoundError as e:
                     print(e)
             else:
-                response = create_page(path_name, page_name, space_obj) #Create page as top page
-            if(response.status_code == 200):
+                response = create_page(path_name, page_name, space_obj)
+
+            if response.status_code == 200:
                 print(f"Created {page_name} with {parent_name} as parent")
 
-        if(response.status_code == 200):
+        if response.status_code == 200:
             for attachment in MarkdownToConfluence.globals.attachments:
                 upload_attachment(page_name, attachment[0], attachment[1])
         else:
@@ -71,6 +72,5 @@ def upload_documentation(path_name:str, root:str):
         print("Skipped uploading")
 
 if __name__ == "__main__":
-    import sys
     MarkdownToConfluence.globals.init()
     upload_documentation(sys.argv[1], sys.argv[2])

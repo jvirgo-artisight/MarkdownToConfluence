@@ -1,14 +1,16 @@
 import os
-# assign directory
-FILES_PATH = os.environ.get("INPUT_FILESLOCATION")
+from MarkdownToConfluence.utils.config import get_config  # ✅ Central config
 
-# iterate over files in
-# that directory
+config = get_config()
+FILES_PATH = config["FILES_PATH"]
+
 def traverse(directory):
     for filename in os.listdir(directory):
         f = os.path.join(directory, filename)
-        # checking if it is a file
-        if(os.path.isdir(f)):
+        if os.path.isdir(f):
             traverse(f)
-        if(f.endswith('.md')):
+        if f.endswith('.md'):
             print(f)
+
+if __name__ == "__main__":
+    traverse(FILES_PATH)
