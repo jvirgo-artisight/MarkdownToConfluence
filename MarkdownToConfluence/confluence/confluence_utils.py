@@ -12,34 +12,35 @@ AUTH_API_TOKEN = config["AUTH_API_TOKEN"]
 auth = HTTPBasicAuth(AUTH_USERNAME, AUTH_API_TOKEN)
 
 def page_exists_in_space(title: str, spaceKey: str, parent_id: str = None) -> bool:
-    url = f"{BASE_URL}/wiki/rest/api/content?spaceKey={spaceKey}&title={quote(title)}"
-    if parent_id:
-        url += f"&ancestors={parent_id}"
+    try:
+        get_page_id(title, spaceKey, parent_id)
+        return True
+    except PageNotFoundError:
+        return False
 
-    headers = { 'User-Agent': 'python' }
-    response = requests.get(url, headers=headers, auth=auth)
-
-    if response.status_code == 200:
-        return len(response.json().get("results", [])) > 0
-    print(response.text)
-    return False
 
 
 def get_page_id(title: str, spaceKey: str, parent_id: str = None) -> str:
     url = f"{BASE_URL}/wiki/rest/api/content?spaceKey={spaceKey}&title={quote(title)}"
-    if parent_id:
-        url += f"&ancestors={parent_id}"  # ✅ limit search to children of parent_id
-
     headers = { 'User-Agent': 'python' }
     response = requests.get(url, headers=headers, auth=auth)
 
     if response.status_code == 200:
         results = response.json().get("results", [])
-        if results:
-            return results[0]["id"]
+        for page in results:
+            # ✅ Only return if it's a direct descendant of our PARENT_ID
+            ancestors = page.get("ancestors", [])
+            if parent_id:
+                if any(str(ancestor["id"]) == str(parent_id) for ancestor in ancestors):
+                    return page["id"]
+            else:
+                return page["id"]
+
         raise PageNotFoundError(title, spaceKey)
-    print(response.text)
-    raise PageNotFoundError(title, spaceKey)
+    else:
+        print(response.text)
+        raise PageNotFoundError(title, spaceKey)
+
 
 
 def get_all_descendants_by_id(parent_id: str):
