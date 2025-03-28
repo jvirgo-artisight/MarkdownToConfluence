@@ -11,7 +11,7 @@ import MarkdownToConfluence.globals
 from MarkdownToConfluence.confluence.create_empty_page import create_empty_page
 from MarkdownToConfluence.confluence.upload_attachments import upload_attachment
 from MarkdownToConfluence.utils.config import get_config 
-from MarkdownToConfluence.confluence.confluence_utils import get_page_title_by_id
+from MarkdownToConfluence.confluence import confluence_utils
 
 def create_page(filename: str):
     if os.path.isdir(filename):
