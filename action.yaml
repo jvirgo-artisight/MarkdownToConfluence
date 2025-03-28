@@ -27,6 +27,9 @@ inputs:
     required: false
     default: false
     type: boolean
+  parent_id:
+    required: false
+    description: 'Optional parent page ID to scope all pages under'
 outputs:
   status:
     description: 'Status of the converter'
