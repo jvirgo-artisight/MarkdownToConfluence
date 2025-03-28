@@ -3,7 +3,7 @@ FROM ubuntu:latest
 RUN apt-get update && apt-get install -y software-properties-common gcc && \
    add-apt-repository -y ppa:deadsnakes/ppa
 
-RUN apt-get install -y python3.6 python3-setuptools python3-pip python3-apt python3-venv
+RUN apt-get install -y python3 python3-setuptools python3-pip python3-apt python3-venv
 
 RUN python3 -m venv venv
 RUN chmod +x /venv/*
