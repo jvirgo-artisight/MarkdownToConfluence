@@ -12,6 +12,7 @@ from MarkdownToConfluence.confluence.create_empty_page import create_empty_page
 from MarkdownToConfluence.confluence.upload_attachments import upload_attachment
 from MarkdownToConfluence.utils.config import get_config 
 from MarkdownToConfluence.confluence import confluence_utils
+from MarkdownToConfluence.confluence.confluence_utils import get_page_title_by_id
 
 def create_page(filename: str):
     if os.path.isdir(filename):
@@ -34,7 +35,7 @@ def create_page(filename: str):
     if confluence_utils.page_exists_in_space(page_name, SPACEKEY, PARENT_ID):
         return "Page already exists"
 
-    print(f"Creating {page_name} with {parent_name} as parent")
+    print(f"Creating {page_name} with {parent_display} as parent")
 
     template = {
         "version": { "number": 1 },
