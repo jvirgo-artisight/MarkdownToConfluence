@@ -7,6 +7,6 @@ from .confluence_utils import (
     page_exists_in_space,
     get_all_pages_in_space,
     get_page_id,
-    get_all_descendants,
+    get_all_descendants_by_id,
     get_page_title_by_id,  # include all used functions
 )
