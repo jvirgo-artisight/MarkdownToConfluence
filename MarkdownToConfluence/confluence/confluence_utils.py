@@ -83,3 +83,13 @@ def get_all_pages_in_space(space_key: str):
     else:
         print(response)
     return results
+
+def get_page_title_by_id(page_id: str) -> str:
+    url = f"{BASE_URL}/wiki/rest/api/content/{page_id}"
+    headers = { 'User-Agent': 'python' }
+    response = requests.get(url, headers=headers, auth=auth)
+    if response.status_code == 200:
+        return response.json().get("title", "")
+    else:
+        print(f"⚠️ Failed to fetch title for page ID {page_id}")
+        return ""

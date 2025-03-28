@@ -8,5 +8,5 @@ from .confluence_utils import (
     get_all_pages_in_space,
     get_page_id,
     get_all_descendants_by_id,
-    get_page_title_by_id,  # include all used functions
+    get_page_title_by_id,
 )
