@@ -7,11 +7,14 @@ from requests.auth import HTTPBasicAuth
 from MarkdownToConfluence.utils import convert_markdown
 from MarkdownToConfluence.utils.page_file_info import get_page_name_from_path, get_parent_name_from_path, get_parent_path_from_child
 from MarkdownToConfluence.confluence import confluence_utils
+from MarkdownToConfluence.confluence.PageNotFoundError import PageNotFoundError
 import MarkdownToConfluence.globals
 from MarkdownToConfluence.confluence.create_content import create_page
 from MarkdownToConfluence.confluence.create_empty_page import create_empty_page
 from MarkdownToConfluence.confluence.upload_attachments import upload_attachment
-from MarkdownToConfluence.utils.config import get_config  # ✅ central config
+from MarkdownToConfluence.utils.config import get_config
+
+
 
 def update_page_content(filename: str, old_filename=""):
     config = get_config()
