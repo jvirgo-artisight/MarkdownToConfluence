@@ -1,183 +1,168 @@
 # MarkdownToConfluence
-Bachelor 2022 - Anders Larsen &amp; Theis Tengs
+Forked and enhanced by Artisight to support parent scoping, page cleanup, and flexible configuration.
 
-This action converts your markdown files into the specified Atlassian Confluence space.
-
-# Setup
-## API User Token
-First you need to create an API token for the user, you want to use for the action. We recommend that you create a new user, that is only used for this action, in order to get the full benefits from the action. This user should also have full permission to make changes on the space. See [here](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) for how to set up your API token.
-
-## Inputs
-
-`fileslocation`
-
-**Optional** 
-
-The path from the root of your repository, to the folder containing the markdown documentation. Default `./`.
+This GitHub Action converts your markdown documentation into structured Confluence pages under a specific space and parent page.
 
 ---
 
-`should_upload`
-
-**Optional** 
-
-A boolean value determining whether the action if run on a push event should upload. Defaults to 'true'
-
----
-
-`confluence_url`
-
-**Required** 
-
-The base URL for the Atlassian network. Follows the form: 'https://[your-network-name].atlassian.net'
+## 🚀 What This Action Does
+- Converts `.md` files into Confluence-formatted HTML.
+- Preserves folder-based page hierarchy.
+- Uploads to a **specific space and parent page** (`parent_id`).
+- Deletes Confluence pages that no longer exist in the repo.
+- Supports preview environments (only uploads changed content).
 
 ---
 
-`confluence_space_key`
+## ⚙️ Setup
 
-**Required**
+### API User Token
+Create an Atlassian API token for your Confluence user. This user should have full write access to the target space.
 
-The key of the space that is being uploaded to. Can be found in the URL for your space. More info [here](https://confluence.atlassian.com/doc/space-keys-829076188.html)
-
----
-
-`auth_username`
-
-**Required**
-
-The email used for the user connected to the API token. We recommend setting this as a GitHub secret.
+[How to create an API token](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
 
 ---
 
-`auth_api_token`
+## 📊 Inputs
 
-**Required**
+### `confluence_url` ✨ **Required**
+Base URL for your Atlassian instance. Format: `https://your-company.atlassian.net`
 
-The API token generated for the user. We recommend setting this as a GitHub secret.
+### `confluence_space_key` ✨ **Required**
+The key of your Confluence space (shown in the URL).
+
+### `auth_username` ✨ **Required**
+Email address of your Confluence user. Recommended to use GitHub secrets.
+
+### `auth_api_token` ✨ **Required**
+API token for authentication. Recommended to use GitHub secrets.
+
+### `fileslocation` ✅ Optional
+Path to your markdown docs directory. Default: `./`
+
+### `parent_id` ✨ **Required**
+The Confluence page ID under which all new pages will be created.
+
+### `should_upload` ✅ Optional
+Whether to upload on push. Default: `true`
+
+### `is_preview` ✅ Optional
+If true, uploads only the changed pages and their parents (for use in preview environments).
 
 ---
 
-`is_preview`
+## 📆 Example Usage
 
-**Optional**
-
-Determines weather or not this worklow should only upload a preview. When uploading a preview, make sure to use a dedicated preview space. A preview only showcases the nescesarry pages to show the pages that have been made changes to. 
-
-Ex. If a the only change that has been made, is to a child page of some other page, then the parent page and child page will be uploaded, and the rest of the space will be empty.
-
---- 
-
-## Example usage
-With GitHub secrets
 ```yaml
 jobs:
-  markdown_to_confluence_job:
+  markdown_to_confluence:
     runs-on: ubuntu-latest
-    name: Converting Markdown to Confluence
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Conversion step
-        uses: TTengs/MarkdownToConfluence@v3
+      - name: Publish Markdown to Confluence
+        uses: jvirgo-artisight/MarkdownToConfluence@main
         with:
-          fileslocation: './documentation'
+          fileslocation: 'docs'
+          confluence_url: 'https://your-company.atlassian.net'
+          confluence_space_key: 'SPACEKEY'
+          parent_id: '1234567890'
+          auth_username: ${{ secrets.CONFLUENCE_USERNAME }}
+          auth_api_token: ${{ secrets.CONFLUENCE_API_TOKEN }}
           should_upload: true
-          confluence_url: 'https://network.atlassian.net/wiki'
-          confluence_space_key: 'spaceKey'
-          auth_username: ${{ secrets.AUTH_USERNAME }}
-          auth_api_token: ${{ secrets.AUTH_API_TOKEN }}
           is_preview: false
 ```
-### Full pipeline with preview
-If you want to create a pipeline, that publishes a preview on a pull-request, and then update the public space once the pull-request is accepted, you will have to set up these two workflows:
 
-preview.yaml
-```
+### 🌐 Full CI Pipeline
+**Preview on PR, Publish on Merge**
+
+#### `.github/workflows/preview.yaml`
+```yaml
 on:
   pull_request:
-    branches:
-      - "main"
-    paths:
-      - "documentation/**"
-      
+    branches: ["main"]
+    paths: ["docs/**"]
+
 jobs:
   create-preview:
     runs-on: ubuntu-latest
-    name: Uploading Preview
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Conversion step
-        uses: TTengs/MarkdownToConfluence@v3
+      - uses: actions/checkout@v3
+      - name: Preview Docs to Confluence
+        uses: jvirgo-artisight/MarkdownToConfluence@main
         with:
-          fileslocation: 'documentation'
-          confluence_url: 'https://network.atlassian.net'
-          confluence_space_key: 'PreviewSpaceKey'
-          auth_username: ${{ secrets.AUTH_USERNAME }}
-          auth_api_token: ${{ secrets.AUTH_API_TOKEN }}
+          fileslocation: 'docs'
+          confluence_url: 'https://your-company.atlassian.net'
+          confluence_space_key: 'PreviewKey'
+          parent_id: '9876543210'
+          auth_username: ${{ secrets.CONFLUENCE_USERNAME }}
+          auth_api_token: ${{ secrets.CONFLUENCE_API_TOKEN }}
           is_preview: true
 ```
-upload.yaml
-```
+
+#### `.github/workflows/upload.yaml`
+```yaml
 on:
   push:
-    branches:
-      - "main"
-    paths:
-      - "documentation/**"
+    branches: ["main"]
+    paths: ["docs/**"]
 
 jobs:
-  push_to_confluence:
+  publish:
     runs-on: ubuntu-latest
-    name: Converting Markdown to Confluence
     steps:
-      # To use this repository's private action,
-      # you must check out the repository
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Conversion step
-        uses: TTengs/MarkdownToConfluence@v3
+      - uses: actions/checkout@v3
+      - name: Publish Docs to Confluence
+        uses: jvirgo-artisight/MarkdownToConfluence@main
         with:
-          fileslocation: 'documentation'
-          confluence_url: 'https://network.atlassian.net'
-          confluence_space_key: 'PublicSpaceKey'
-          auth_username: ${{ secrets.AUTH_USERNAME }}
-          auth_api_token: ${{ secrets.AUTH_API_TOKEN }}
+          fileslocation: 'docs'
+          confluence_url: 'https://your-company.atlassian.net'
+          confluence_space_key: 'SPACEKEY'
+          parent_id: '1234567890'
+          auth_username: ${{ secrets.CONFLUENCE_USERNAME }}
+          auth_api_token: ${{ secrets.CONFLUENCE_API_TOKEN }}
+          should_upload: true
+          is_preview: false
 ```
+
 ---
 
-# Writing Documentation
+## 📃 Writing Docs
 
-## Page structure
-The structure of the markdown files in the filesystem, dictates the structure of the pages on confluence.
+### File Structure
+Your docs folder mirrors the desired Confluence page tree.
 
-All files should be located in a single folder, which is the one specified in [fileslocation](#fileslocation). This folder will not contain any markdown files (if so, they won't be recognized as pages), but only folders, a [prefix](./doc/prefix.md)- and [settings-file](./doc/settings.md). Every subfolder under this folder, will be considered a page, these are referenced later as a "folderpage".
+- Each folder = a Confluence page
+- `index.md` inside a folder = content for that page
+- Other `.md` files = child pages
+- Nested folders = nested child pages
 
-A folderpage can contain other folderpages, as well as markdown files. The file containing the content of the folderpage, __MUST__ be named "index.md". Any other markdown files inside the folderpage, will be considered as a child page.
+```
+docs/
+  Overview/
+    index.md
+    HowItWorks.md
+  Troubleshooting/
+    index.md
+  README.md (ignored)
+```
 
-A child page can also be defined by another folderpage inside a folderpage. This is only recommended, if you need child pages for that folderpage as well. Otherwise, we recommend simply using multiple markdown files.
+### Prefixing
+Include `prefix.txt` in any folder to prefix page names.
 
-### Page naming
-The name of a folderpage dicates the name of the page in confluence.
+### Cleanup
+Pages removed from the filesystem are automatically deleted from Confluence during the next push.
 
-Folderpages with multiple markdown files, will contain child pages named after the name of the markdown file.
+### Modules
+Supports:
+- Jira ticket linking
+- Mermaid diagrams
+- Trello boards
+- Attachment upload
+- Table of contents
 
-Any folderpage can contain a [prefix.txt](./doc/prefix.md) file, dictating the prefix for all it's child pages.
+See `doc/modules/*.md` for usage.
 
-### Example
-The following filestructure:
+---
 
-![filesystem](./doc/images/filestructure.PNG)
-
-Will look like this, once uploaded to Confluence:
-
-![pagestructure](./doc/images/pagestructure.PNG)
-
-## Modules
-This tool comes with a number of modules, which add extra markdown syntax, specialized for Confluence and other tools.
-
-- [Jira Tickets](./doc/modules/jira-tickets.md)
-- [Attachments](./doc/modules/attachments.md)
-- [Mermaid.js](./doc/modules/mermaid.md)
-- [Table of Contents](./doc/modules/table-of-contents.md)
-- [Trello Boards](./doc/modules/trello-boards.md)
+Maintained with ❤️ by Artisight
