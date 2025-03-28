@@ -124,7 +124,12 @@ def update_page_content(filename: str, old_filename=""):
     return put_response
 
 if __name__ == "__main__":
-    if(len(sys.argv) == 2):
-        update_page_content(sys.argv[1])
-    elif(len(sys.argv) == 3):
-        update_page_content(sys.argv[1], sys.argv[2])
+    try:
+        if len(sys.argv) == 2:
+            update_page_content(sys.argv[1])
+        elif len(sys.argv) == 3:
+            update_page_content(sys.argv[1], sys.argv[2])
+    except FileNotFoundError as e:
+        print(f"⚠️ Skipping missing file: {e}")
+        sys.exit(0)  # Exit cleanly instead of crashing
+
