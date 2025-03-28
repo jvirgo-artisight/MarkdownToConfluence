@@ -49,9 +49,9 @@ def get_page_name_from_path(path: str, root: str):
     if file_name == "index.md":
         page_name += parts[-2] if len(parts) >= 2 else "index"
     else:
-        page_name += file_name
+        page_name += os.path.splitext(file_name)[0]  # ✅ Correctly strip ".md"
 
-    return page_name.strip('.md')
+    return page_name
 
 def get_parent_name_from_path(path: str, root: str, default=""):
     if not os.path.exists(path):
