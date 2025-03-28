@@ -1,84 +1,93 @@
-import os, json
+import os
 from posixpath import basename, dirname
 import MarkdownToConfluence.globals
 
-# Returns "" if path == root
+# Returns "" if path == root or file does not exist
 def get_prefix(path: str, root: str) -> str:
-    if(not os.path.exists(path)):
+    if not os.path.exists(path):
         raise FileNotFoundError(path)
-    if(not os.path.exists(root)):
+    if not os.path.exists(root):
         raise FileNotFoundError(root)
-    if(path == root):
+    if path == root:
         return ""
-    if(path.endswith("index.md") and "prefix.txt" in os.listdir(dirname(path))): # No prefix for index page in folder with prefix.txt (prefix is only for underpages)
-        return ""
-    if(path.endswith("index.md") and dirname(path) == root):
-        return ""
-    if(os.path.isfile(path)):
-        path = os.path.dirname(path)
-    else:
-        if("prefix.txt" in os.listdir(path)): # assume index.md, No prefix for index page in folder with prefix.txt (prefix is only for underpages)
-            return ""
-    while("prefix.txt" not in os.listdir(path)):
-        path = os.path.dirname(path)
-        if(path == root or path == "" or path == os.sep):
-            return ""
-    with open(f"{path}/prefix.txt", 'r') as f:
-        return f.readline()
 
-# Returns "" if path == root
-def get_page_name_from_path(path: str, root: str):
-    if(path == root):
+    if os.path.isfile(path):
+        dir_path = os.path.dirname(path)
+    else:
+        dir_path = path
+
+    if path.endswith("index.md") and "prefix.txt" in os.listdir(dirname(path)):
         return ""
-    if(os.path.isdir(path)): # Assume index.md if path is dir
+    if path.endswith("index.md") and dirname(path) == root:
+        return ""
+    if not os.path.isdir(dir_path):
+        return ""
+
+    while "prefix.txt" not in os.listdir(dir_path):
+        dir_path = os.path.dirname(dir_path)
+        if dir_path in [root, "", os.sep]:
+            return ""
+    try:
+        with open(f"{dir_path}/prefix.txt", 'r') as f:
+            return f.readline().strip()
+    except Exception:
+        return ""
+
+def get_page_name_from_path(path: str, root: str):
+    if not os.path.exists(path):
+        raise FileNotFoundError(path)
+    if path == root:
+        return ""
+
+    if os.path.isdir(path):  # Assume index.md if path is dir
         path = os.path.join(path, "index.md")
-    path_arr = path.split('/')
+
     page_name = get_prefix(path, root)
     file_name = basename(path)
-    if(file_name == "index.md"):
-        page_name += path_arr[-2]
+    parts = path.split('/')
+
+    if file_name == "index.md":
+        page_name += parts[-2] if len(parts) >= 2 else "index"
     else:
         page_name += file_name
+
     return page_name.strip('.md')
 
-# Returns the page name of the parent of the file in path. Returns default value if no parent exists i system
-# Returns "" if path == root
 def get_parent_name_from_path(path: str, root: str, default=""):
-    if(path == root):
+    if not os.path.exists(path):
+        raise FileNotFoundError(path)
+    if path == root:
         return ""
+
     settings = MarkdownToConfluence.globals.settings
+    if settings and "parent_page" in settings:
+        default = settings["parent_page"]
 
-    if(settings != None):
-        if("parent_page" in settings.keys()):
-            default = settings["parent_page"]
-    if(os.path.isdir(path)): # Assume index.md if path is dir
+    if os.path.isdir(path):  # Assume index.md if path is dir
         path = os.path.join(path, "index.md")
-        
-    file_name = basename(path)
-    parent_name = ""
 
-    if(file_name == "index.md"):
+    file_name = basename(path)
+
+    if file_name == "index.md":
         parent_path = dirname(dirname(path))
     else:
         parent_path = dirname(path)
 
-    if(parent_path != root):
-        parent_name = get_page_name_from_path(parent_path, root)
-    else:
-        parent_name = default
-
-    return parent_name
-
+    if os.path.exists(parent_path) and parent_path != root:
+        try:
+            return get_page_name_from_path(parent_path, root)
+        except FileNotFoundError:
+            return default
+    return default
 
 def get_all_md_paths(root: str):
-    paths = []      
+    paths = []
     def traverse(directory):
         for filename in os.listdir(directory):
             f = os.path.join(directory, filename)
-            # checking if it is a file
-            if(os.path.isdir(f)):
+            if os.path.isdir(f):
                 traverse(f)
-            if(f.endswith('.md')):
+            elif f.endswith('.md'):
                 paths.append(f)
     traverse(root)
     return paths
@@ -86,13 +95,15 @@ def get_all_md_paths(root: str):
 def get_all_page_names_in_filesystem(root: str):
     page_names = []
     for path in get_all_md_paths(root):
-        name = (get_page_name_from_path(path, root))
-        page_names.append(name)
+        try:
+            name = get_page_name_from_path(path, root)
+            page_names.append(name)
+        except FileNotFoundError:
+            continue
     return page_names
 
 def get_parent_path_from_child(child_path: str):
-    print('Get parent name: ', child_path, basename(child_path))
-    if(basename(child_path).strip() != "index.md"):
+    if basename(child_path).strip() != "index.md":
         return dirname(child_path)
     else:
         return dirname(dirname(child_path))
