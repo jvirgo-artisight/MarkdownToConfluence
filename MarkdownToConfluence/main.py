@@ -9,7 +9,7 @@ from utils import convert_all_md_img_to_confluence_img
 import MarkdownToConfluence.confluence.convert_markdown as conver_markdown
 import MarkdownToConfluence.globals
 from utils.page_file_info import get_page_name_from_path, get_parent_name_from_path
-from MarkdownToConfluence.utils.config import get_config  # ✅ Import config
+from MarkdownToConfluence.utils.config import get_config  # ✅ Central config
 
 import subprocess
 import markdown
@@ -17,12 +17,11 @@ import module_loader
 import os
 import sys
 
-config = get_config()  # ✅ Initialize config
+config = get_config()
 SPACE_KEY = config["SPACE_KEY"]
+PARENT_ID = config["PARENT_ID"]
 
-space_obj = {
-    "key": SPACE_KEY,
-}
+space_obj = { "key": SPACE_KEY }
 
 def upload_documentation(path_name: str, root: str):
     response = ""
@@ -32,9 +31,9 @@ def upload_documentation(path_name: str, root: str):
     page_name, parent_name = conver_markdown.convert(path_name, root)
 
     if config["SHOULD_UPLOAD"]:
-        if page_exists_in_space(page_name, SPACE_KEY):
+        if page_exists_in_space(page_name, SPACE_KEY, PARENT_ID):  # ✅ Scoped
             try:
-                page_id = get_page_id(page_name, SPACE_KEY)
+                page_id = get_page_id(page_name, SPACE_KEY, PARENT_ID)  # ✅ Scoped
                 response = update_page_content(path_name, page_name, page_id, space_obj)
                 if response.status_code == 200:
                     print(f"Updated {page_name} with {parent_name} as parent")
@@ -43,14 +42,14 @@ def upload_documentation(path_name: str, root: str):
         else:
             if parent_name != "":
                 try:
-                    if not page_exists_in_space(parent_name, SPACE_KEY):
+                    if not page_exists_in_space(parent_name, SPACE_KEY, PARENT_ID):  # ✅ Scoped
                         print(f"Uploading parent: {parent_name}")
                         file_name = basename(path_name).replace(".md", "")
                         if file_name != "index":
                             subprocess.call(["bash", "/MarkdownToConfluence/convert.sh", f"{dirname(path_name)}/index.md"])
                         else:
                             subprocess.call(["bash", "/MarkdownToConfluence/convert.sh", f"{dirname(dirname(path_name))}/index.md"])
-                    parent_id = get_page_id(parent_name, SPACE_KEY)
+                    parent_id = get_page_id(parent_name, SPACE_KEY, PARENT_ID)  # ✅ Scoped
                     response = create_page(path_name, page_name, space_obj, parent_id)
                 except PageNotFoundError as e:
                     print(e)

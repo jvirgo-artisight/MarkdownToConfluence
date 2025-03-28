@@ -57,7 +57,15 @@ def create_page(filename: str):
                 print(f"Parent didn't exist, creating parent: {parent_name}")
                 create_page(get_parent_path_from_child(filename))
 
-        template['ancestors'] = [{ "id": confluence_utils.get_page_id(parent_name, SPACEKEY, PARENT_ID) }]
+        parent_page_id = confluence_utils.get_page_id(parent_name, SPACEKEY, PARENT_ID)
+        template['ancestors'] = [{ "id": parent_page_id }]
+    else:
+        # 🚨 This is the missing piece
+        # No parent_name set, but we have a configured parent_id
+        if PARENT_ID:
+            print(f"Assigning top-level ancestor using configured PARENT_ID: {PARENT_ID}")
+            template['ancestors'] = [{ "id": PARENT_ID }]
+
 
     html_file = filename.replace(".md", ".html")
 

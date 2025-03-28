@@ -91,11 +91,19 @@ def update_page_content(filename: str, old_filename=""):
         'User-Agent': 'python'
     }
 
-    if old_parent_name != parent_name:
-        move_url = f"{BASE_URL}/wiki/rest/api/content/{page_id}/move/append/{confluence_utils.get_page_id(parent_name, SPACE_KEY, PARENT_ID)}"
-        move_response = requests.put(move_url, headers=headers, auth=auth)
-        if move_response.status_code == 200:
-            print(f"✅ Moved page {page_name} from {old_parent_name} to {parent_name}")
+    if old_parent_name != parent_name and parent_name:
+        try:
+            new_parent_id = confluence_utils.get_page_id(parent_name, SPACE_KEY, PARENT_ID)
+            move_url = f"{BASE_URL}/wiki/rest/api/content/{page_id}/move/append/{new_parent_id}"
+            move_response = requests.put(move_url, headers=headers, auth=auth)
+            if move_response.status_code == 200:
+                print(f"✅ Moved page {page_name} from {old_parent_name} to {parent_name}")
+            else:
+                print(f"⚠️ Move failed. Status: {move_response.status_code}")
+                print(move_response.text)
+        except Exception as e:
+            print(f"⚠️ Could not move page {page_name}: {str(e)}")
+
 
     get_response = requests.get(f"{url}?expand=version", headers=headers, auth=auth)
     version_number = int(get_response.json()['version']['number'])

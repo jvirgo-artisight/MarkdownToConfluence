@@ -43,10 +43,13 @@ The `exclude` arg lets you skip deletion for specific page names.
 def delete_non_existing_descendants(space_key: str, root: str, exclude=[]):
     MarkdownToConfluence.globals.init()
     settings = MarkdownToConfluence.globals.settings
-    if settings and 'parent_name' in settings:
+    if settings and 'parent_page' in settings:
         pages_in_space = confluence_utils.get_all_descendants(settings['parent_page'], space_key)
+    elif PARENT_ID:
+        pages_in_space = confluence_utils.get_all_descendants_by_id(PARENT_ID)
     else:
         pages_in_space = confluence_utils.get_all_pages_in_space(space_key)
+
 
     pages_in_filesystem = get_all_page_names_in_filesystem(root)
     for result in pages_in_space:

@@ -1,110 +1,79 @@
 import requests, json, shutil, time
-import os.path
+import os
 from urllib.parse import quote
-from os import path
 from requests.auth import HTTPBasicAuth
+from MarkdownToConfluence.utils.config import get_config
 
-SPACE_KEY = 'space key'
-BASE_URL = 'https:// network name .atlassian.net'
-AUTH_USERNAME = 'user email'
-AUTH_API_TOKEN = 'Super secret api token'
-DOCS_FOLDER_NAME = "Name of folder to place docs into" #if left empty, the script will create a folder called "docs"
+config = get_config()
 
-#If this GET_DOCS_FOLDER is set to true, the script will try to find a page on the space that is equal to DOCS_FOLDER_NAME 
-#and only download the pages under
-GET_DOCS_FOLDER = False
+SPACE_KEY = config["SPACE_KEY"]
+BASE_URL = config["BASE_URL"]
+AUTH_USERNAME = config["AUTH_USERNAME"]
+AUTH_API_TOKEN = config["AUTH_API_TOKEN"]
+DOCS_FOLDER_NAME = config.get("FILES_PATH", "docs")
+PARENT_ID = config.get("PARENT_ID")
 
 auth = HTTPBasicAuth(AUTH_USERNAME, AUTH_API_TOKEN)
 
+
 def get_all_pages_in_space(space_key: str):
     url = f"{BASE_URL}/wiki/rest/api/content?spaceKey={space_key}"
-
-    headers = {
-    'User-Agent': 'python'
-    }
+    headers = { 'User-Agent': 'python' }
 
     results = []
-    response = requests.request("GET", url, headers=headers, auth=auth)
-    if(response.status_code == 200):
-        response_json = json.loads(response.text)
+    response = requests.get(url, headers=headers, auth=auth)
+    if response.status_code == 200:
+        response_json = response.json()
         results.extend(response_json['results'])
-        while("next" in response_json['_links']):
+        while "next" in response_json.get('_links', {}):
             url = BASE_URL + '/wiki' + response_json["_links"]["next"]
-            response = requests.request("GET", url, headers=headers, auth=auth)
-            #print(response, response.text)
-            if(response.status_code == 200):
-                response_json = json.loads(response.text)
+            response = requests.get(url, headers=headers, auth=auth)
+            if response.status_code == 200:
+                response_json = response.json()
                 results.extend(response_json['results'])
             else:
                 break
     else:
         print(response)
-    results_title = [s['title'] for s in results]
-    return results_title
+    return [s['title'] for s in results]
 
-def get_all_decendants_in_page(pageID: str):
+
+def get_all_descendants_in_page(pageID: str):
     url = f"{BASE_URL}/wiki/rest/api/content/{pageID}/descendant/page?limit=9999"
-
-    headers = {
-    'User-Agent': 'python'
-    }
+    headers = { 'User-Agent': 'python' }
 
     results = []
-    response = requests.request("GET", url, headers=headers, auth=auth)
-    if(response.status_code == 200):
-        response_json = json.loads(response.text)
+    response = requests.get(url, headers=headers, auth=auth)
+    if response.status_code == 200:
+        response_json = response.json()
         results.extend(response_json['results'])
-        while("next" in response_json['_links']):
+        while "next" in response_json.get('_links', {}):
             url = BASE_URL + '/wiki' + response_json["_links"]["next"]
-            response = requests.request("GET", url, headers=headers, auth=auth)
-            #print(response, response.text)
-            if(response.status_code == 200):
-                response_json = json.loads(response.text)
+            response = requests.get(url, headers=headers, auth=auth)
+            if response.status_code == 200:
+                response_json = response.json()
                 results.extend(response_json['results'])
             else:
                 break
     else:
         print(response)
+    return [s['title'] for s in results]
 
-    results_title = [str(s['title']) for s in results]
-    #print(results_title)
-    
-    return results_title
-
-def get_page_id(title: str, spaceKey: str) -> str:
-    
-    url = f"{BASE_URL}/wiki/rest/api/content?spaceKey={spaceKey}&title={quote(title)}"
-    headers = {
-    'User-Agent': 'python'
-    }
-    response = requests.request('GET', url, headers=headers, auth=auth)
-    if(response.status_code == 200):
-        results = json.loads(response.text)['results']
-        if(len(results) > 0):
-            return results[0]['id']
-        else:
-            print(f"Page was not found with {title}, {spaceKey}")
-    else:
-        print(response.text)
-        print(f"Page was not found with {title}, {spaceKey}")
 
 def getChildren(pageId: str):
     url = f"{BASE_URL}/wiki/rest/api/content/{pageId}/child/page"
-
-    headers = {
-    'User-Agent': 'python'
-    }
+    headers = { 'User-Agent': 'python' }
 
     results = []
-    response = requests.request("GET", url, headers=headers, auth=auth)
-    if(response.status_code == 200):
-        response_json = json.loads(response.text)
+    response = requests.get(url, headers=headers, auth=auth)
+    if response.status_code == 200:
+        response_json = response.json()
         results.extend(response_json['results'])
-        while("next" in response_json['_links']):
+        while "next" in response_json.get('_links', {}):
             url = response_json["_links"]["base"] + response_json["_links"]["next"]
-            response = requests.request("GET", url, headers=headers, auth=auth)
-            if(response.status_code == 200):
-                response_json = json.loads(response.text)
+            response = requests.get(url, headers=headers, auth=auth)
+            if response.status_code == 200:
+                response_json = response.json()
                 results.extend(response_json['results'])
             else:
                 break
@@ -113,70 +82,81 @@ def getChildren(pageId: str):
 
     return results
 
+
 def findPath(folder: str, dirname: str):
     for root, dirs, files in os.walk(os.path.abspath(folder)):
         for name in dirs:
-            if name == dirname:  
-                #name = pathReplacer(name)
-                result = os.path.abspath(os.path.join(root, name))
-                return result
+            if name == dirname:
+                return os.path.abspath(os.path.join(root, name))
+
 
 def checkIfFolderExist():
     global DOCS_FOLDER_NAME
-    if(DOCS_FOLDER_NAME == ""):
-        if(not path.exists("docs")):
-            os.mkdir("docs")
-        DOCS_FOLDER_NAME = "docs"
-    else:
-        if(not path.exists(DOCS_FOLDER_NAME)):
-            os.mkdir(DOCS_FOLDER_NAME)
+    if not os.path.exists(DOCS_FOLDER_NAME):
+        os.makedirs(DOCS_FOLDER_NAME)
 
-def createPages(pages: any):
-    for page in pages:
-        page = pathReplacer(page)
-        path = f"{DOCS_FOLDER_NAME}/{page}"
-        os.mkdir(path)
-        open(f"{path}/index.md", 'w')
 
-def sortPages(pages: any):
+def createPages(pages: list):
     for page in pages:
-        id = get_page_id(page, SPACE_KEY)
-        page = pathReplacer(page)
-        for child in getChildren(id):
-            child = pathReplacer(child['title'])
-            print(f"moving {child} to {page}")
-            childPath = findPath(DOCS_FOLDER_NAME, child)
-            parentPath = findPath(DOCS_FOLDER_NAME, page)
-            shutil.move(childPath, parentPath)
+        safe_page = pathReplacer(page)
+        page_path = f"{DOCS_FOLDER_NAME}/{safe_page}"
+        os.makedirs(page_path, exist_ok=True)
+        with open(f"{page_path}/index.md", 'w') as f:
+            f.write("")  # empty placeholder
+
+
+def sortPages(pages: list):
+    for page in pages:
+        page_id = get_page_id(page, SPACE_KEY, PARENT_ID)
+        safe_page = pathReplacer(page)
+        for child in getChildren(page_id):
+            child_name = pathReplacer(child['title'])
+            print(f"Moving {child_name} → {safe_page}")
+            child_path = findPath(DOCS_FOLDER_NAME, child_name)
+            parent_path = findPath(DOCS_FOLDER_NAME, safe_page)
+            if child_path and parent_path:
+                shutil.move(child_path, parent_path)
+
+
+def get_page_id(title: str, space_key: str, parent_id: str = None) -> str:
+    url = f"{BASE_URL}/wiki/rest/api/content?spaceKey={space_key}&title={quote(title)}"
+    if parent_id:
+        url += f"&ancestors={parent_id}"
+    headers = { 'User-Agent': 'python' }
+    response = requests.get(url, headers=headers, auth=auth)
+    if response.status_code == 200:
+        results = response.json().get('results', [])
+        if results:
+            return results[0]['id']
+        else:
+            raise Exception(f"Page not found: {title}")
+    raise Exception(f"Error looking up page: {title} → {response.status_code}")
+
 
 def pathReplacer(page: str):
-    page = page.replace('"', "'")
-    page = page.replace("*", "")
-    page = page.replace("\\", "")
-    page = page.replace("?", "")
-    page = page.replace("<", "")
-    page = page.replace(">", "")
-    page = page.replace("|", "")
-    page = page.replace(":", "")
-    if (page[-1] == "."):
+    page = page.replace('"', "'").replace("*", "").replace("\\", "")
+    page = page.replace("?", "").replace("<", "").replace(">", "")
+    page = page.replace("|", "").replace(":", "")
+    if page.endswith("."):
         page = page[:-1]
     return page.replace("/", "%")
+
+
+# ---- Main Runner ----
 
 if __name__ == "__main__":
     start = time.time()
 
     checkIfFolderExist()
 
-    if (GET_DOCS_FOLDER):
-        id = get_page_id(DOCS_FOLDER_NAME, SPACE_KEY)
-        pages = get_all_decendants_in_page(id)
+    if PARENT_ID:
+        pages = get_all_descendants_in_page(PARENT_ID)
     else:
         pages = get_all_pages_in_space(SPACE_KEY)
 
     createPages(pages)
-
     sortPages(pages)
-    
+
     end = time.time()
-    print("Time taken to was: ")
-    print((end - start) / 60, "minutes")
+    print("✅ Markdown folder structure complete.")
+    print(f"⏱️ Time taken: {(end - start) / 60:.2f} minutes")

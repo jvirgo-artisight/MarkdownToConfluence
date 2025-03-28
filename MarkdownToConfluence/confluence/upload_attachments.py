@@ -18,8 +18,10 @@ headers = {
 }
 
 def upload_attachment(page_title, attachment_name, filepath):
-    if page_exists_in_space(page_title, SPACEKEY):
-        url = f"{BASE_URL}/wiki/rest/api/content/{get_page_id(page_title, SPACEKEY)}/child/attachment"
+    PARENT_ID = config["PARENT_ID"]  # ✅ ensure parent scoping
+    if page_exists_in_space(page_title, SPACEKEY, PARENT_ID):
+        page_id = get_page_id(page_title, SPACEKEY, PARENT_ID)
+        url = f"{BASE_URL}/wiki/rest/api/content/{page_id}/child/attachment"
 
         # Get existing attachment ID if it exists
         attachment_id = ""
@@ -43,3 +45,4 @@ def upload_attachment(page_title, attachment_name, filepath):
         return response
     else:
         raise PageNotFoundError(page_title, SPACEKEY)
+

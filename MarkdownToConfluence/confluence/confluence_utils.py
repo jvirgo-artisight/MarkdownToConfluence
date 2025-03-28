@@ -42,29 +42,28 @@ def get_page_id(title: str, spaceKey: str, parent_id: str = None) -> str:
     raise PageNotFoundError(title, spaceKey)
 
 
-def get_all_descendants(parent_page: str, space_key: str):
-    if page_exists_in_space(parent_page, space_key):
-        page_id = get_page_id(parent_page, space_key)
-        url = f"{BASE_URL}/wiki/rest/api/content/{page_id}/descendant/page"
-        headers = { 'User-Agent': 'python' }
+def get_all_descendants_by_id(parent_id: str):
+    url = f"{BASE_URL}/wiki/rest/api/content/{parent_id}/descendant/page"
+    headers = { 'User-Agent': 'python' }
 
-        results = []
-        response = requests.get(url, headers=headers, auth=auth)
-        if response.status_code == 200:
-            response_json = response.json()
-            results.extend(response_json.get("results", []))
-            while "next" in response_json.get("_links", {}):
-                next_url = response_json["_links"]["base"] + response_json["_links"]["next"]
-                response = requests.get(next_url, headers=headers, auth=auth)
-                if response.status_code == 200:
-                    response_json = response.json()
-                    results.extend(response_json.get("results", []))
-                else:
-                    break
-        else:
-            print(response)
-        return results
-    raise PageNotFoundError(parent_page, space_key)
+    results = []
+    response = requests.get(url, headers=headers, auth=auth)
+    if response.status_code == 200:
+        response_json = response.json()
+        results.extend(response_json.get("results", []))
+        while "next" in response_json.get("_links", {}):
+            next_url = response_json["_links"]["base"] + response_json["_links"]["next"]
+            response = requests.get(next_url, headers=headers, auth=auth)
+            if response.status_code == 200:
+                response_json = response.json()
+                results.extend(response_json.get("results", []))
+            else:
+                break
+    else:
+        print(f"❌ Error fetching descendants from page ID {parent_id}")
+        print(response.text)
+    return results
+
 
 def get_all_pages_in_space(space_key: str):
     url = f"{BASE_URL}/wiki/rest/api/content?spaceKey={space_key}"
