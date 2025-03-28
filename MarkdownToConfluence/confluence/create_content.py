@@ -32,8 +32,11 @@ def create_page(filename: str):
     parent_display = get_page_title_by_id(PARENT_ID) if not parent_name else parent_name
     attachments = MarkdownToConfluence.globals.attachments
 
-    if confluence_utils.page_exists_in_space(page_name, SPACEKEY, PARENT_ID):
-        return "Page already exists"
+    if confluence_utils.page_exists_in_space(page_name, SPACEKEY):
+        print(f"🔁 Page '{page_name}' already exists — switching to update")
+        from MarkdownToConfluence.confluence.update_content import update_page_content
+        update_page_content(filename)
+        return
 
     print(f"Creating {page_name} with {parent_display} as parent")
 
