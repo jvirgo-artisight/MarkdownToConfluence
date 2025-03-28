@@ -14,13 +14,14 @@ FILES_PATH = config["FILES_PATH"]
 SPACE_KEY = config["SPACE_KEY"]
 AUTH_USERNAME = config["AUTH_USERNAME"]
 AUTH_API_TOKEN = config["AUTH_API_TOKEN"]
+PARENT_ID = config["PARENT_ID"]
 
 auth = HTTPBasicAuth(AUTH_USERNAME, AUTH_API_TOKEN)
 
 def delete_page_from_file(filename: str):
     page_name = get_page_name_from_path(filename, FILES_PATH)
-    if confluence_utils.page_exists_in_space(page_name, SPACE_KEY):
-        page_id = confluence_utils.get_page_id(page_name, SPACE_KEY)
+    if confluence_utils.page_exists_in_space(page_name, SPACE_KEY, PARENT_ID):
+        page_id = confluence_utils.get_page_id(page_name, SPACE_KEY, PARENT_ID)
         return delete_page(page_id)
 
 def delete_page(page_id: str, page_name=""):

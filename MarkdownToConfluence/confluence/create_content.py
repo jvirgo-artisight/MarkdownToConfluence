@@ -22,6 +22,7 @@ def create_page(filename: str):
     AUTH_API_TOKEN = config["AUTH_API_TOKEN"]
     SPACEKEY = config["SPACE_KEY"]
     ROOT = config["FILES_PATH"]
+    PARENT_ID = config["PARENT_ID"]
     auth = HTTPBasicAuth(AUTH_USERNAME, AUTH_API_TOKEN)
 
     MarkdownToConfluence.globals.init()
@@ -29,7 +30,7 @@ def create_page(filename: str):
     page_name, parent_name = convert_markdown.convert(filename, ROOT)
     attachments = MarkdownToConfluence.globals.attachments
 
-    if confluence_utils.page_exists_in_space(page_name, SPACEKEY):
+    if confluence_utils.page_exists_in_space(page_name, SPACEKEY, PARENT_ID):
         return "Page already exists"
 
     print(f"Creating {page_name} with {parent_name} as parent")
@@ -48,7 +49,7 @@ def create_page(filename: str):
     }
 
     if parent_name:
-        if not confluence_utils.page_exists_in_space(parent_name, SPACEKEY):
+        if not confluence_utils.page_exists_in_space(parent_name, SPACEKEY, PARENT_ID):
             if 'parent_name' in MarkdownToConfluence.globals.settings and parent_name == MarkdownToConfluence.globals.settings['parent_name']:
                 print(f"Parent didn't exist, creating empty parent at root: {parent_name}")
                 create_empty_page(parent_name)
@@ -56,7 +57,7 @@ def create_page(filename: str):
                 print(f"Parent didn't exist, creating parent: {parent_name}")
                 create_page(get_parent_path_from_child(filename))
 
-        template['ancestors'] = [{ "id": confluence_utils.get_page_id(parent_name, SPACEKEY) }]
+        template['ancestors'] = [{ "id": confluence_utils.get_page_id(parent_name, SPACEKEY, PARENT_ID) }]
 
     html_file = filename.replace(".md", ".html")
 

@@ -10,11 +10,12 @@ BASE_URL = config["BASE_URL"]
 AUTH_USERNAME = config["AUTH_USERNAME"]
 AUTH_API_TOKEN = config["AUTH_API_TOKEN"]
 SPACEKEY = config["SPACE_KEY"]
+PARENT_ID = config["PARENT_ID"]
 
 auth = HTTPBasicAuth(AUTH_USERNAME, AUTH_API_TOKEN)
 
 def create_empty_page(page_name: str):
-    if confluence_utils.page_exists_in_space(confluence_utils.get_page_id(page_name, SPACEKEY)):
+    if confluence_utils.page_exists_in_space(confluence_utils.get_page_id(page_name, SPACEKEY, PARENT_ID)):
         return "Page already exists"
 
     template = {

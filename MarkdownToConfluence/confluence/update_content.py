@@ -20,6 +20,7 @@ def update_page_content(filename: str, old_filename=""):
     AUTH_API_TOKEN = config["AUTH_API_TOKEN"]
     SPACE_KEY = config["SPACE_KEY"]
     ROOT = config["FILES_PATH"]
+    PARENT_ID = config["PARENT_ID"]
 
     auth = HTTPBasicAuth(AUTH_USERNAME, AUTH_API_TOKEN)
     MarkdownToConfluence.globals.init()
@@ -39,14 +40,14 @@ def update_page_content(filename: str, old_filename=""):
                 old.write(" ")
             old_page_name = get_page_name_from_path(old_filename, ROOT)
             old_parent_name = get_parent_name_from_path(old_filename, ROOT)
-            page_id = confluence_utils.get_page_id(old_page_name, SPACE_KEY)
+            page_id = confluence_utils.get_page_id(old_page_name, SPACE_KEY, PARENT_ID)
             os.remove(old_filename)
         else:
             old_page_name = get_page_name_from_path(old_filename, ROOT)
             old_parent_name = get_parent_name_from_path(old_filename, ROOT)
-            page_id = confluence_utils.get_page_id(old_page_name, SPACE_KEY)
+            page_id = confluence_utils.get_page_id(old_page_name, SPACE_KEY, PARENT_ID)
     else:
-        page_id = confluence_utils.get_page_id(page_name, SPACE_KEY)
+        page_id = confluence_utils.get_page_id(page_name, SPACE_KEY, PARENT_ID)
 
     print(f"🔄 Updating page {page_id} with title {page_name}")
 
@@ -65,7 +66,7 @@ def update_page_content(filename: str, old_filename=""):
     }
 
     if parent_name:
-        if not confluence_utils.page_exists_in_space(parent_name, SPACE_KEY):
+        if not confluence_utils.page_exists_in_space(parent_name, SPACE_KEY, PARENT_ID):
             if 'parent_name' in MarkdownToConfluence.globals.settings and parent_name == MarkdownToConfluence.globals.settings['parent_name']:
                 print(f"📄 Creating missing root parent: {parent_name}")
                 create_empty_page(parent_name)
@@ -91,7 +92,7 @@ def update_page_content(filename: str, old_filename=""):
     }
 
     if old_parent_name != parent_name:
-        move_url = f"{BASE_URL}/wiki/rest/api/content/{page_id}/move/append/{confluence_utils.get_page_id(parent_name, SPACE_KEY)}"
+        move_url = f"{BASE_URL}/wiki/rest/api/content/{page_id}/move/append/{confluence_utils.get_page_id(parent_name, SPACE_KEY, PARENT_ID)}"
         move_response = requests.put(move_url, headers=headers, auth=auth)
         if move_response.status_code == 200:
             print(f"✅ Moved page {page_name} from {old_parent_name} to {parent_name}")
