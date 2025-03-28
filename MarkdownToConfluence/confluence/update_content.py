@@ -26,6 +26,12 @@ def update_page_content(filename: str, old_filename=""):
     old_parent_name = ""
     page_name, parent_name = convert_markdown.convert(filename, ROOT)
 
+    try:
+        page_name, parent_name = convert_markdown.convert(filename, ROOT)
+    except FileNotFoundError:
+        print(f"⚠️ Skipping missing file: {filename}")
+        return None
+
     if(old_filename != ""):
         if(not os.path.exists(old_filename)):
             with open(old_filename, 'w') as old: # create the file temporaily to get names
