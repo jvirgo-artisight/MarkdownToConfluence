@@ -13,6 +13,7 @@ from MarkdownToConfluence.confluence.create_content import create_page
 from MarkdownToConfluence.confluence.create_empty_page import create_empty_page
 from MarkdownToConfluence.confluence.upload_attachments import upload_attachment
 from MarkdownToConfluence.utils.config import get_config
+from MarkdownToConfluence.confluence.confluence_utils import get_page_title_by_id
 
 
 
@@ -33,6 +34,7 @@ def update_page_content(filename: str, old_filename=""):
 
     try:
         page_name, parent_name = convert_markdown.convert(filename, ROOT)
+        parent_display = get_page_title_by_id(PARENT_ID) if not parent_name else parent_name
     except FileNotFoundError:
         print(f"⚠️ Skipping missing file: {filename}")
         return None

@@ -20,26 +20,15 @@ def page_exists_in_space(title: str, spaceKey: str, parent_id: str = None) -> bo
 
 
 
-def get_page_id(title: str, spaceKey: str, parent_id: str = None) -> str:
-    url = f"{BASE_URL}/wiki/rest/api/content?spaceKey={spaceKey}&title={quote(title)}"
+def get_page_title_by_id(page_id: str) -> str:
+    url = f"{BASE_URL}/wiki/rest/api/content/{page_id}"
     headers = { 'User-Agent': 'python' }
     response = requests.get(url, headers=headers, auth=auth)
-
     if response.status_code == 200:
-        results = response.json().get("results", [])
-        for page in results:
-            # ✅ Only return if it's a direct descendant of our PARENT_ID
-            ancestors = page.get("ancestors", [])
-            if parent_id:
-                if any(str(ancestor["id"]) == str(parent_id) for ancestor in ancestors):
-                    return page["id"]
-            else:
-                return page["id"]
-
-        raise PageNotFoundError(title, spaceKey)
+        return response.json().get("title", "")
     else:
-        print(response.text)
-        raise PageNotFoundError(title, spaceKey)
+        print(f"⚠️ Failed to fetch title for page ID {page_id}")
+        return ""
 
 
 
