@@ -1,3 +1,4 @@
+import os
 import json
 from MarkdownToConfluence.utils.config import get_config
 
