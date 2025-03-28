@@ -11,6 +11,7 @@ import MarkdownToConfluence.globals
 from utils.page_file_info import get_page_name_from_path, get_parent_name_from_path
 from MarkdownToConfluence.utils.config import get_config  # ✅ Central config
 
+from MarkdownToConfluence.confluence.delete_content import delete_non_existing_descendants  # ✅ ADD
 import subprocess
 import markdown
 import module_loader
@@ -20,6 +21,7 @@ import sys
 config = get_config()
 SPACE_KEY = config["SPACE_KEY"]
 PARENT_ID = config["PARENT_ID"]
+FILES_PATH = config["FILES_PATH"]
 
 space_obj = { "key": SPACE_KEY }
 
@@ -72,4 +74,8 @@ def upload_documentation(path_name: str, root: str):
 
 if __name__ == "__main__":
     MarkdownToConfluence.globals.init()
+
+    # ✅ Auto-clean removed pages from Confluence before upload
+    delete_non_existing_descendants(SPACE_KEY, FILES_PATH)
+
     upload_documentation(sys.argv[1], sys.argv[2])
