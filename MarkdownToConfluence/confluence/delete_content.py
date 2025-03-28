@@ -51,6 +51,13 @@ def delete_non_existing_descendants(space_key: str, root: str, exclude=[]):
 
     pages_in_filesystem = get_all_page_names_in_filesystem(root)
     normalized_files = [name.strip(".md") for name in pages_in_filesystem]
+    print("📁 Pages in filesystem:")
+    for p in sorted(pages_in_filesystem):
+        print(f"  - {p}")
+
+    print("📄 Pages in Confluence:")
+    for result in pages_in_space:
+        print(f"  - {result['title']}")
 
     for result in pages_in_space:
         if result['title'] not in normalized_files and result['title'] not in exclude:
