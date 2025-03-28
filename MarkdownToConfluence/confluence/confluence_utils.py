@@ -2,7 +2,8 @@ from urllib.parse import quote
 import requests, json
 from requests.auth import HTTPBasicAuth
 from MarkdownToConfluence.confluence.PageNotFoundError import PageNotFoundError
-from MarkdownToConfluence.utils.config import get_config  # ✅ centralized config
+from MarkdownToConfluence.utils.config import get_config
+from MarkdownToConfluence.confluence import confluence_utils
 
 config = get_config()
 BASE_URL = config["BASE_URL"]
