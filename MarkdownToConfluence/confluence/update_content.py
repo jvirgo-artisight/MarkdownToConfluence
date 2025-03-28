@@ -47,7 +47,13 @@ def update_page_content(filename: str, old_filename=""):
             old_parent_name = get_parent_name_from_path(old_filename, ROOT)
             page_id = confluence_utils.get_page_id(old_page_name, SPACE_KEY, PARENT_ID)
     else:
-        page_id = confluence_utils.get_page_id(page_name, SPACE_KEY, PARENT_ID)
+        try:
+            page_id = confluence_utils.get_page_id(page_name, SPACE_KEY, PARENT_ID)
+        except PageNotFoundError:
+            print(f"🆕 Page '{page_name}' not found under parent — creating new page")
+            create_page(filename.replace(".html", ".md"))
+            return None  # Skip further update since create_page already handles upload
+
 
     print(f"🔄 Updating page {page_id} with title {page_name}")
 
