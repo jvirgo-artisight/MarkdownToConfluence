@@ -93,3 +93,15 @@ def get_page_title_by_id(page_id: str) -> str:
     else:
         print(f"⚠️ Failed to fetch title for page ID {page_id}")
         return ""
+def get_child_pages_under_parent(parent_id: str):
+    url = f"{BASE_URL}/wiki/rest/api/content/{parent_id}/child/page?limit=1000"
+    headers = { 'User-Agent': 'python' }
+    response = requests.get(url, headers=headers, auth=auth)
+
+    if response.status_code != 200:
+        print(f"⚠️ Could not fetch children for parent ID {parent_id}. Status code: {response.status_code}")
+        print(response.text)
+        return []
+
+    data = response.json()
+    return data.get("results", [])
