@@ -45,38 +45,44 @@ def sync_page(title, parent_id, content):
     return new_page['id']
 
 
-def process_folder(FILES_PATH, PARENT_ID):
-    if not os.path.isdir(FILES_PATH):
+def process_folder(folder_path, parent_id):
+    print(f"🔍 Processing: {folder_path}")
+    if not os.path.isdir(folder_path):
+        print(f"❌ Not a directory: {folder_path}")
         return
 
-    entries = os.listdir(FILES_PATH)
+    entries = os.listdir(folder_path)
+    print(f"📁 Entries: {entries}")
     if "index.md" not in entries:
-        return  # skip folders without index.md
+        print(f"⏭️ Skipping folder (no index.md): {folder_path}")
+        return
 
-    folder_title = os.path.basename(FILES_PATH)
-    index_path = os.path.join(FILES_PATH, "index.md")
+    folder_title = os.path.basename(folder_path)
+    index_path = os.path.join(folder_path, "index.md")
     index_content = read_md(index_path)
     image_paths = extract_images(index_content)
 
-    folder_page_id = sync_page(folder_title, PARENT_ID, index_content)
-    upload_images(folder_page_id, image_paths, FILES_PATH)
+    folder_page_id = sync_page(folder_title, parent_id, index_content)
+    upload_images(folder_page_id, image_paths, folder_path)
 
     for entry in entries:
-        entry_path = os.path.join(FILES_PATH, entry)
+        entry_path = os.path.join(folder_path, entry)
         if entry.endswith(".md") and entry != "index.md":
             title = os.path.splitext(entry)[0]
             content = read_md(entry_path)
             image_paths = extract_images(content)
             child_page_id = sync_page(title, folder_page_id, content)
-            upload_images(child_page_id, image_paths, FILES_PATH)
+            upload_images(child_page_id, image_paths, folder_path)
 
     for entry in entries:
-        entry_path = os.path.join(FILES_PATH, entry)
+        entry_path = os.path.join(folder_path, entry)
         if os.path.isdir(entry_path):
             process_folder(entry_path, folder_page_id)
 
+
 # 🚀 Begin syncing
 def sync_entire_docs_tree():
+    print(f"📄 Starting sync from: {FILES_PATH}")
     process_folder(FILES_PATH, PARENT_ID)
 
 # Optional direct run
