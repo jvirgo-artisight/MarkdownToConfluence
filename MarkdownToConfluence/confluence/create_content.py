@@ -76,4 +76,4 @@ def process_folder(folder_path, parent_id):
             process_folder(entry_path, folder_page_id)
 
 # 🚀 Begin syncing
-process_folder(DOCS_ROOT, ROOT_PARENT_ID)
+process_folder(FILES_PATH, PARENT_ID)
