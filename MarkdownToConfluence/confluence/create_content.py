@@ -1,112 +1,72 @@
-import json
-import codecs
-import requests
-import sys, os
-from requests.auth import HTTPBasicAuth
+import os
+import re
+from atlassian import Confluence
 
-import MarkdownToConfluence.utils.convert_markdown as convert_markdown
-import MarkdownToConfluence.confluence.confluence_utils as confluence_utils
-from MarkdownToConfluence.utils import get_parent_path_from_child
-import MarkdownToConfluence.globals
-from MarkdownToConfluence.confluence.create_empty_page import create_empty_page
-from MarkdownToConfluence.confluence.upload_attachments import upload_attachment
-from MarkdownToConfluence.utils.config import get_config 
-from MarkdownToConfluence.confluence import confluence_utils
-from MarkdownToConfluence.confluence.confluence_utils import get_page_title_by_id
+# === CONFIG ===
+CONFLUENCE_URL = "https://wbcoordinator.atlassian.net/wiki"
+USERNAME = "your-email@example.com"
+API_TOKEN = "your-api-token"
+SPACE_KEY = "DevOps"
+ROOT_PARENT_ID = "3281485826"  # Artisight Helm Chart page ID
+DOCS_ROOT = "docs/Artisight Helm Chart"
 
-def create_page(filename: str):
-    if os.path.isdir(filename):
-        filename = os.path.join(filename, 'index.md')
+confluence = Confluence(
+    url=CONFLUENCE_URL,
+    username=USERNAME,
+    password=API_TOKEN
+)
 
-    config = get_config()
-    BASE_URL = config["BASE_URL"]
-    AUTH_USERNAME = config["AUTH_USERNAME"]
-    AUTH_API_TOKEN = config["AUTH_API_TOKEN"]
-    SPACEKEY = config["SPACE_KEY"]
-    ROOT = config["FILES_PATH"]
-    PARENT_ID = config["PARENT_ID"]
-    auth = HTTPBasicAuth(AUTH_USERNAME, AUTH_API_TOKEN)
+def read_md(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        return f.read()
 
-    MarkdownToConfluence.globals.init()
-    page_name, parent_name = convert_markdown.convert(filename, ROOT)
-    attachments = MarkdownToConfluence.globals.attachments
+def extract_images(md_content):
+    return re.findall(r'!\[.*?\]\((.*?)\)', md_content)
 
-    # 🧠 Determine correct parent_id FIRST
-    if parent_name:
-        if not confluence_utils.page_exists_in_space(parent_name, SPACEKEY, PARENT_ID):
-            if 'parent_name' in MarkdownToConfluence.globals.settings and parent_name == MarkdownToConfluence.globals.settings['parent_name']:
-                print(f"Parent didn't exist, creating empty parent at root: {parent_name}")
-                create_empty_page(parent_name)
-            else:
-                print(f"Parent didn't exist, creating parent: {parent_name}")
-                create_page(get_parent_path_from_child(filename))
-        parent_id = confluence_utils.get_page_id(parent_name, SPACEKEY, PARENT_ID)
-        parent_display = parent_name
+def upload_images(page_id, image_paths, base_path):
+    for rel_path in image_paths:
+        abs_path = os.path.join(base_path, rel_path)
+        if os.path.exists(abs_path):
+            confluence.attach_file(abs_path, page_id)
+
+def sync_page(title, parent_id, content):
+    page = confluence.get_page_by_title(SPACE_KEY, title, parent_id=parent_id)
+    if page:
+        confluence.update_page(page['id'], title, content)
+        return page['id']
     else:
-        parent_id = PARENT_ID
-        parent_display = get_page_title_by_id(PARENT_ID)
+        page = confluence.create_page(SPACE_KEY, title, content, parent_id=parent_id)
+        return page['id']
 
-    # ✅ Check if page exists under correct parent
-    if confluence_utils.page_exists_in_space(page_name, SPACEKEY, parent_id):
-        print(f"🔁 Page '{page_name}' already exists under correct parent — switching to update")
-        from MarkdownToConfluence.confluence.update_content import update_page_content
-        update_page_content(filename)
+def process_folder(folder_path, parent_id):
+    if not os.path.isdir(folder_path):
         return
 
-    if confluence_utils.page_exists_in_space(page_name, SPACEKEY):
-        print(f"⚠️ Page '{page_name}' already exists in space but not under parent '{parent_display}' — skipping or handling conflict")
-        return
+    entries = os.listdir(folder_path)
+    if "index.md" not in entries:
+        return  # skip folders without index.md
 
-    print(f"🆕 Page '{page_name}' not found under parent — creating new page")
+    folder_title = os.path.basename(folder_path)
+    index_path = os.path.join(folder_path, "index.md")
+    index_content = read_md(index_path)
+    image_paths = extract_images(index_content)
 
-    # Page creation template
-    template = {
-        "version": { "number": 1 },
-        "title": page_name,
-        "type": "page",
-        "space": { "key": SPACEKEY },
-        "ancestors": [{ "id": parent_id }],
-        "body": {
-            "storage": {
-                "value": "",
-                "representation": "storage"
-            }
-        }
-    }
+    folder_page_id = sync_page(folder_title, parent_id, index_content)
+    upload_images(folder_page_id, image_paths, folder_path)
 
-    # Remove <!DOCTYPE html> from html file
-    html_file = filename.replace(".md", ".html")
-    with open(html_file, "r") as f:
-        lines = f.readlines()
-    with open(html_file, "w") as f:
-        for line in lines:
-            if line.strip("\n") != "<!DOCTYPE html>":
-                f.write(line)
+    for entry in entries:
+        entry_path = os.path.join(folder_path, entry)
+        if entry.endswith(".md") and entry != "index.md":
+            title = os.path.splitext(entry)[0]
+            content = read_md(entry_path)
+            image_paths = extract_images(content)
+            child_page_id = sync_page(title, folder_page_id, content)
+            upload_images(child_page_id, image_paths, folder_path)
 
-    # Load HTML into template
-    with codecs.open(html_file, 'r', encoding='utf-8') as f:
-        template['body']['storage']['value'] = f.read()
+    for entry in entries:
+        entry_path = os.path.join(folder_path, entry)
+        if os.path.isdir(entry_path):
+            process_folder(entry_path, folder_page_id)
 
-    url = f'{BASE_URL}/wiki/rest/api/content'
-    headers = {
-        'Content-Type': 'application/json; charset=utf-8',
-        'User-Agent': 'python'
-    }
-
-    response = requests.post(url, headers=headers, data=json.dumps(template), auth=auth)
-
-    if response.status_code == 200:
-        for attachment in attachments:
-            upload_attachment(page_name, attachment[0], attachment[1])
-        print(f"✅ Created {page_name} with {parent_display} as parent")
-        MarkdownToConfluence.globals.reset()
-    else:
-        print(f"❌ Error uploading {page_name}. Status code {response.status_code}")
-        print(response.text)
-        sys.exit(1)
-
-    return response
-
-
-if __name__ == "__main__":
-    create_page(sys.argv[1])
+# 🚀 Begin syncing
+process_folder(DOCS_ROOT, ROOT_PARENT_ID)
