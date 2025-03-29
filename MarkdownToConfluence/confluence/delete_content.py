@@ -5,7 +5,7 @@ from MarkdownToConfluence.utils import get_all_page_names_in_filesystem, get_pag
 import MarkdownToConfluence.confluence.confluence_utils as confluence_utils
 from MarkdownToConfluence.confluence.confluence_utils import get_all_pages_in_space
 import MarkdownToConfluence.globals
-from MarkdownToConfluence.utils.config import get_config  # ✅ central config
+from MarkdownToConfluence.utils.config import get_config
 
 config = get_config()
 
