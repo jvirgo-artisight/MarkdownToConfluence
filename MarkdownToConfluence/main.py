@@ -10,7 +10,7 @@ import MarkdownToConfluence.confluence.convert_markdown as conver_markdown
 import MarkdownToConfluence.globals
 from utils.page_file_info import get_page_name_from_path, get_parent_name_from_path
 from MarkdownToConfluence.utils.config import get_config 
-from MarkdownToConfluence.confluence.delete_content import delete_non_existing_descendants
+from MarkdownToConfluence.confluence.delete_content import delete_stale_confluence_pages
 import subprocess
 import markdown
 import module_loader
@@ -74,4 +74,4 @@ def upload_documentation(path_name: str, root: str):
 if __name__ == "__main__":
     MarkdownToConfluence.globals.init()
     upload_documentation(sys.argv[1], sys.argv[2])
-    delete_non_existing_descendants(SPACE_KEY, config["FILES_PATH"])
+    delete_stale_confluence_pages()
