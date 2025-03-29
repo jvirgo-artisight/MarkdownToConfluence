@@ -1,4 +1,4 @@
-import requests, json, sys
+import requests, json, sys, os
 from requests.auth import HTTPBasicAuth
 
 from MarkdownToConfluence.utils import get_all_page_names_in_filesystem, get_page_name_from_path
