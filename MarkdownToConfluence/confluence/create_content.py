@@ -105,7 +105,21 @@ def process_folder(folder_path, parent_id):
 # 🚀 Begin syncing
 def sync_entire_docs_tree():
     print(f"📄 Starting sync from: {FILES_PATH}")
-    process_folder(FILES_PATH, PARENT_ID)
+
+    # If no parent ID, create top-level page in the space
+    if PARENT_ID is None:
+        index_path = os.path.join(FILES_PATH, "index.md")
+        title = os.path.basename(FILES_PATH)
+        content = read_md(index_path)
+        print(f"🆕 Creating top-level page in space: {SPACE_KEY} with title: {title}")
+        root_page = confluence.create_page(SPACE_KEY, title, content)
+        root_id = root_page["id"]
+    else:
+        root_id = PARENT_ID
+        print(f"📎 Using existing parent page ID: {PARENT_ID}")
+
+    process_folder(FILES_PATH, root_id)
+
 
 # Optional direct run
 if __name__ == "__main__":
