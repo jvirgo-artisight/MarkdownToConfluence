@@ -47,7 +47,7 @@ def get_page_name_from_path(path: str, root: str):
     parts = path.split('/')
 
     if file_name == "index.md":
-        page_name += parts[-2] if len(parts) >= 2 else "index"
+        page_name += parts[-2] if len(parts) >= 2 else os.path.basename(root)
     else:
         page_name += os.path.splitext(file_name)[0]  # ✅ Correctly strip ".md"
 
