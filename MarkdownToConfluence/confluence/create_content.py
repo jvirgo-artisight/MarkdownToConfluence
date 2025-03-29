@@ -30,13 +30,16 @@ def upload_images(page_id, image_paths, base_path):
             confluence.attach_file(abs_path, page_id)
 
 def sync_page(title, parent_id, content):
-    page = confluence.get_page_by_title(SPACE_KEY, title, parent_id=parent_id)
-    if page:
-        confluence.update_page(page['id'], title, content)
-        return page['id']
-    else:
-        page = confluence.create_page(SPACE_KEY, title, content, parent_id=parent_id)
-        return page['id']
+    children = confluence.get_child_pages(parent_id)
+    for child in children:
+        if child['title'] == title:
+            confluence.update_page(child['id'], title, content)
+            return child['id']
+
+    # Not found — create new
+    new_page = confluence.create_page(SPACE_KEY, title, content, parent_id=parent_id)
+    return new_page['id']
+
 
 def process_folder(folder_path, parent_id):
     if not os.path.isdir(folder_path):
