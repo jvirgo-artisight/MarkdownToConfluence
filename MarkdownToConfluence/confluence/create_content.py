@@ -53,6 +53,10 @@ def create_page(filename: str):
         update_page_content(filename)
         return
 
+    if confluence_utils.page_exists_in_space(page_name, SPACEKEY):
+        print(f"⚠️ Page '{page_name}' already exists in space but not under parent '{parent_display}' — skipping or handling conflict")
+        return
+
     print(f"🆕 Page '{page_name}' not found under parent — creating new page")
 
     # Page creation template

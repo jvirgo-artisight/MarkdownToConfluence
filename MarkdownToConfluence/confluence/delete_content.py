@@ -19,7 +19,7 @@ PARENT_ID = config["PARENT_ID"]
 auth = HTTPBasicAuth(AUTH_USERNAME, AUTH_API_TOKEN)
 
 def delete_page_from_file(filename: str):
-    page_name = get_page_name_from_path(filename, FILES_PATH)
+    page_name = os.path.splitext(os.path.basename(filename))[0]
     if confluence_utils.page_exists_in_space(page_name, SPACE_KEY, PARENT_ID):
         page_id = confluence_utils.get_page_id(page_name, SPACE_KEY, PARENT_ID)
         return delete_page(page_id)
