@@ -41,7 +41,13 @@ def sync_page(title, parent_id, content):
             return child['id']
 
     # Not found — create new
-    new_page = confluence.create_page(SPACE_KEY, title, content, parent_id=parent_id)
+    new_page = confluence.create_page(
+    space=SPACE_KEY,
+    title=title,
+    body=content,
+    representation='storage',
+    parent_id=parent_id
+)
     return new_page['id']
 
 
