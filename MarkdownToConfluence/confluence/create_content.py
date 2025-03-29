@@ -51,12 +51,7 @@ def process_folder(folder_path, parent_id):
         print(f"❌ Not a directory: {folder_path}")
         return
 
-    try:
-        entries = os.listdir(folder_path)
-    except Exception as e:
-        print(f"❌ Could not list directory: {folder_path} — {str(e)}")
-        return
-
+    entries = os.listdir(folder_path)
     print(f"📁 Found entries in {folder_path}: {entries}")
 
     if "index.md" not in entries:
@@ -65,21 +60,19 @@ def process_folder(folder_path, parent_id):
 
     folder_title = os.path.basename(folder_path)
 
-    # Don't re-create the top-level page
+    # If this folder is the top-level one matching the existing parent page, skip sync
     if parent_id == PARENT_ID and folder_title == os.path.basename(FILES_PATH):
-        folder_page_id = parent_id  # Reuse existing parent
+        folder_page_id = parent_id
         print(f"📎 Using existing top-level parent page: {folder_title} (ID: {parent_id})")
     else:
+        print(f"📄 Syncing folder page: {folder_title} (parent ID: {parent_id})")
+        index_path = os.path.join(folder_path, "index.md")
+        index_content = read_md(index_path)
+        image_paths = extract_images(index_content)
         folder_page_id = sync_page(folder_title, parent_id, index_content)
+        upload_images(folder_page_id, image_paths, folder_path)
 
-    print(f"📄 Syncing folder page: {folder_title} (parent ID: {parent_id})")
-    index_path = os.path.join(folder_path, "index.md")
-    index_content = read_md(index_path)
-    image_paths = extract_images(index_content)
-
-    folder_page_id = sync_page(folder_title, parent_id, index_content)
-    upload_images(folder_page_id, image_paths, folder_path)
-
+    # Process child markdown files (not index.md)
     for entry in entries:
         entry_path = os.path.join(folder_path, entry)
         if entry.endswith(".md") and entry != "index.md":
@@ -89,11 +82,13 @@ def process_folder(folder_path, parent_id):
             child_page_id = sync_page(title, folder_page_id, content)
             upload_images(child_page_id, image_paths, folder_path)
 
+    # Recurse into subfolders
     for entry in entries:
         entry_path = os.path.join(folder_path, entry)
         if os.path.isdir(entry_path):
             process_folder(entry_path, folder_page_id)
 
+    print(f"✅ Synced page: {title} under parent ID {parent_id}")
 
 # 🚀 Begin syncing
 def sync_entire_docs_tree():
