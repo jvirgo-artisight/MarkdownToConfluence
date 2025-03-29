@@ -2,6 +2,7 @@ import os
 import re
 import hashlib
 from atlassian import Confluence
+from MarkdownToConfluence.utils.config import get_config
 
 # Load config from environment (GitHub Actions inputs)
 config = get_config()
