@@ -29,31 +29,9 @@ def create_page(filename: str):
 
     MarkdownToConfluence.globals.init()
     page_name, parent_name = convert_markdown.convert(filename, ROOT)
-    parent_display = get_page_title_by_id(PARENT_ID) if not parent_name else parent_name
     attachments = MarkdownToConfluence.globals.attachments
 
-    if confluence_utils.page_exists_in_space(page_name, SPACEKEY, parent_id):
-        print(f"🔁 Page '{page_name}' already exists — switching to update")
-        from MarkdownToConfluence.confluence.update_content import update_page_content
-        update_page_content(filename)
-        return
-
-    print(f"🆕 Page '{page_name}' not found under parent — creating new page")
-
-    template = {
-        "version": { "number": 1 },
-        "title": page_name,
-        "type": "page",
-        "space": { "key": SPACEKEY },
-        "body": {
-            "storage": {
-                "value": "",
-                "representation": "storage"
-            }
-        }
-    }
-
-    # Determine parent_id (for scoped existence check)
+    # 🧠 Determine correct parent_id FIRST
     if parent_name:
         if not confluence_utils.page_exists_in_space(parent_name, SPACEKEY, PARENT_ID):
             if 'parent_name' in MarkdownToConfluence.globals.settings and parent_name == MarkdownToConfluence.globals.settings['parent_name']:
@@ -63,21 +41,37 @@ def create_page(filename: str):
                 print(f"Parent didn't exist, creating parent: {parent_name}")
                 create_page(get_parent_path_from_child(filename))
         parent_id = confluence_utils.get_page_id(parent_name, SPACEKEY, PARENT_ID)
+        parent_display = parent_name
     else:
         parent_id = PARENT_ID
+        parent_display = get_page_title_by_id(PARENT_ID)
 
-    # ✅ Check if the page exists under correct parent before switching to update
+    # ✅ Check if page exists under correct parent
     if confluence_utils.page_exists_in_space(page_name, SPACEKEY, parent_id):
         print(f"🔁 Page '{page_name}' already exists under correct parent — switching to update")
         from MarkdownToConfluence.confluence.update_content import update_page_content
         update_page_content(filename)
         return
 
+    print(f"🆕 Page '{page_name}' not found under parent — creating new page")
 
-
-    html_file = filename.replace(".md", ".html")
+    # Page creation template
+    template = {
+        "version": { "number": 1 },
+        "title": page_name,
+        "type": "page",
+        "space": { "key": SPACEKEY },
+        "ancestors": [{ "id": parent_id }],
+        "body": {
+            "storage": {
+                "value": "",
+                "representation": "storage"
+            }
+        }
+    }
 
     # Remove <!DOCTYPE html> from html file
+    html_file = filename.replace(".md", ".html")
     with open(html_file, "r") as f:
         lines = f.readlines()
     with open(html_file, "w") as f:
@@ -85,9 +79,9 @@ def create_page(filename: str):
             if line.strip("\n") != "<!DOCTYPE html>":
                 f.write(line)
 
-    # Load html into template
+    # Load HTML into template
     with codecs.open(html_file, 'r', encoding='utf-8') as f:
-        template["ancestors"] = [{ "id": parent_id }]
+        template['body']['storage']['value'] = f.read()
 
     url = f'{BASE_URL}/wiki/rest/api/content'
     headers = {
@@ -108,6 +102,7 @@ def create_page(filename: str):
         sys.exit(1)
 
     return response
+
 
 if __name__ == "__main__":
     create_page(sys.argv[1])
