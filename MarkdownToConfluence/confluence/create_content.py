@@ -76,4 +76,9 @@ def process_folder(folder_path, parent_id):
             process_folder(entry_path, folder_page_id)
 
 # 🚀 Begin syncing
-process_folder(FILES_PATH, PARENT_ID)
+def sync_entire_docs_tree():
+    process_folder(FILES_PATH, PARENT_ID)
+
+# Optional direct run
+if __name__ == "__main__":
+    sync_entire_docs_tree()

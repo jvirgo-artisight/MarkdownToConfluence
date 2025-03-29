@@ -13,13 +13,12 @@ import MarkdownToConfluence.globals
 from MarkdownToConfluence.confluence.upload_attachments import upload_attachment
 from MarkdownToConfluence.utils.config import get_config
 from MarkdownToConfluence.confluence.confluence_utils import get_page_title_by_id
-
-subprocess.run(["python3", "./confluence/create_content.py"], check=True)
-
+from MarkdownToConfluence.confluence.create_content import sync_entire_docs_tree
 
 
 
 def update_page_content(filename: str, old_filename=""):
+    sync_entire_docs_tree()
     config = get_config()
     BASE_URL = config["BASE_URL"]
     AUTH_USERNAME = config["AUTH_USERNAME"]
