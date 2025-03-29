@@ -26,7 +26,7 @@ def delete_stale_confluence_pages():
                 local_pages.add(page_title)
 
     # Step 2: Get current Confluence child pages
-    confluence_pages = get_child_pages_under_parent(PARENT_ID, SPACEKEY)
+    confluence_pages = get_child_pages_under_parent(PARENT_ID)
     confluence_titles_to_ids = {page["title"]: page["id"] for page in confluence_pages}
 
     # Step 3: Find stale pages
