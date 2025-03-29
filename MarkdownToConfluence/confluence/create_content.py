@@ -34,22 +34,24 @@ def upload_images(page_id, image_paths, base_path):
             confluence.attach_file(abs_path, page_id)
 
 def sync_page(title, parent_id, content):
+    # Get children under the parent and match by title
     children = confluence.get_child_pages(parent_id)
     for child in children:
         if child['title'] == title:
+            print(f"🔄 Updating existing page: {title} (ID: {child['id']})")
             confluence.update_page(child['id'], title, content)
             return child['id']
 
-    # Not found — create new
+    # If not found, create the page under the parent
+    print(f"🆕 Creating new page: {title} under parent ID {parent_id}")
     new_page = confluence.create_page(
-    space=SPACE_KEY,
-    title=title,
-    body=content,
-    representation='storage',
-    parent_id=parent_id
-)
+        space=SPACE_KEY,
+        title=title,
+        body=content,
+        representation='storage',
+        parent_id=parent_id
+    )
     return new_page['id']
-
 
 def process_folder(folder_path, parent_id):
     print(f"🔍 Processing: {folder_path}")
@@ -68,8 +70,12 @@ def process_folder(folder_path, parent_id):
 
     # If this folder is the top-level one matching the existing parent page, skip sync
     if parent_id == PARENT_ID and folder_title == os.path.basename(FILES_PATH):
+        # update existing landing page with index.md
+        index_path = os.path.join(folder_path, "index.md")
+        index_content = read_md(index_path)
+        print(f"📎 Updating top-level page: {folder_title} (ID: {parent_id})")
+        confluence.update_page(parent_id, folder_title, index_content)
         folder_page_id = parent_id
-        print(f"📎 Using existing top-level parent page: {folder_title} (ID: {parent_id})")
     else:
         print(f"📄 Syncing folder page: {folder_title} (parent ID: {parent_id})")
         index_path = os.path.join(folder_path, "index.md")
