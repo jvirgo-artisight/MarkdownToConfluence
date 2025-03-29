@@ -51,13 +51,20 @@ def process_folder(folder_path, parent_id):
         print(f"❌ Not a directory: {folder_path}")
         return
 
-    entries = os.listdir(folder_path)
-    print(f"📁 Entries: {entries}")
+    try:
+        entries = os.listdir(folder_path)
+    except Exception as e:
+        print(f"❌ Could not list directory: {folder_path} — {str(e)}")
+        return
+
+    print(f"📁 Found entries in {folder_path}: {entries}")
+
     if "index.md" not in entries:
         print(f"⏭️ Skipping folder (no index.md): {folder_path}")
         return
 
     folder_title = os.path.basename(folder_path)
+    print(f"📄 Syncing folder page: {folder_title} (parent ID: {parent_id})")
     index_path = os.path.join(folder_path, "index.md")
     index_content = read_md(index_path)
     image_paths = extract_images(index_content)
