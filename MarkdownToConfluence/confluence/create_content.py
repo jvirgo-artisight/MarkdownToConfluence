@@ -15,9 +15,9 @@ FILES_PATH = config["FILES_PATH"]
 PARENT_ID = config["PARENT_ID"]
 
 confluence = Confluence(
-    url=CONFLUENCE_URL,
-    username=USERNAME,
-    password=API_TOKEN
+    url=BASE_URL,
+    username=AUTH_USERNAME,
+    password=AUTH_API_TOKEN
 )
 
 def read_md(file_path):
