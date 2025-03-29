@@ -3,17 +3,19 @@ import codecs
 import requests
 import os
 from requests.auth import HTTPBasicAuth
+import subprocess
 
 from MarkdownToConfluence.utils import convert_markdown
 from MarkdownToConfluence.utils.page_file_info import get_page_name_from_path, get_parent_name_from_path, get_parent_path_from_child
 from MarkdownToConfluence.confluence import confluence_utils
 from MarkdownToConfluence.confluence.PageNotFoundError import PageNotFoundError
 import MarkdownToConfluence.globals
-from MarkdownToConfluence.confluence.create_content import create_page
-from MarkdownToConfluence.confluence.create_empty_page import create_empty_page
 from MarkdownToConfluence.confluence.upload_attachments import upload_attachment
 from MarkdownToConfluence.utils.config import get_config
 from MarkdownToConfluence.confluence.confluence_utils import get_page_title_by_id
+
+subprocess.run(["python3", "MarkdownToConfluence/confluence/create_content.py"], check=True)
+
 
 
 
