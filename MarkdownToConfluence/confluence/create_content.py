@@ -64,6 +64,14 @@ def process_folder(folder_path, parent_id):
         return
 
     folder_title = os.path.basename(folder_path)
+
+    # Don't re-create the top-level page
+    if parent_id == PARENT_ID and folder_title == os.path.basename(FILES_PATH):
+        folder_page_id = parent_id  # Reuse existing parent
+        print(f"📎 Using existing top-level parent page: {folder_title} (ID: {parent_id})")
+    else:
+        folder_page_id = sync_page(folder_title, parent_id, index_content)
+
     print(f"📄 Syncing folder page: {folder_title} (parent ID: {parent_id})")
     index_path = os.path.join(folder_path, "index.md")
     index_content = read_md(index_path)
