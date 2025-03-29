@@ -15,10 +15,10 @@ from MarkdownToConfluence.utils.config import get_config
 from MarkdownToConfluence.confluence.confluence_utils import get_page_title_by_id
 from MarkdownToConfluence.confluence.create_content import sync_entire_docs_tree
 
-
+print("📄 Starting full Confluence sync from local docs folder...")
+sync_entire_docs_tree()
 
 def update_page_content(filename: str, old_filename=""):
-    sync_entire_docs_tree()
     config = get_config()
     BASE_URL = config["BASE_URL"]
     AUTH_USERNAME = config["AUTH_USERNAME"]
