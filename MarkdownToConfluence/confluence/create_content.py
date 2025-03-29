@@ -45,33 +45,33 @@ def sync_page(title, parent_id, content):
     return new_page['id']
 
 
-def process_folder(folder_path, parent_id):
-    if not os.path.isdir(folder_path):
+def process_folder(FILES_PATH, PARENT_ID):
+    if not os.path.isdir(FILES_PATH):
         return
 
-    entries = os.listdir(folder_path)
+    entries = os.listdir(FILES_PATH)
     if "index.md" not in entries:
         return  # skip folders without index.md
 
-    folder_title = os.path.basename(folder_path)
-    index_path = os.path.join(folder_path, "index.md")
+    folder_title = os.path.basename(FILES_PATH)
+    index_path = os.path.join(FILES_PATH, "index.md")
     index_content = read_md(index_path)
     image_paths = extract_images(index_content)
 
-    folder_page_id = sync_page(folder_title, parent_id, index_content)
-    upload_images(folder_page_id, image_paths, folder_path)
+    folder_page_id = sync_page(folder_title, PARENT_ID, index_content)
+    upload_images(folder_page_id, image_paths, FILES_PATH)
 
     for entry in entries:
-        entry_path = os.path.join(folder_path, entry)
+        entry_path = os.path.join(FILES_PATH, entry)
         if entry.endswith(".md") and entry != "index.md":
             title = os.path.splitext(entry)[0]
             content = read_md(entry_path)
             image_paths = extract_images(content)
             child_page_id = sync_page(title, folder_page_id, content)
-            upload_images(child_page_id, image_paths, folder_path)
+            upload_images(child_page_id, image_paths, FILES_PATH)
 
     for entry in entries:
-        entry_path = os.path.join(folder_path, entry)
+        entry_path = os.path.join(FILES_PATH, entry)
         if os.path.isdir(entry_path):
             process_folder(entry_path, folder_page_id)
 
