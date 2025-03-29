@@ -14,7 +14,7 @@ from MarkdownToConfluence.confluence.upload_attachments import upload_attachment
 from MarkdownToConfluence.utils.config import get_config
 from MarkdownToConfluence.confluence.confluence_utils import get_page_title_by_id
 
-subprocess.run(["python3", "MarkdownToConfluence/confluence/create_content.py"], check=True)
+subprocess.run(["python3", "./confluence/create_content.py"], check=True)
 
 
 
