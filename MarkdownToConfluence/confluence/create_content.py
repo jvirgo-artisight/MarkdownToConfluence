@@ -1,14 +1,17 @@
 import os
 import re
+import hashlib
 from atlassian import Confluence
 
-# === CONFIG ===
-CONFLUENCE_URL = "https://wbcoordinator.atlassian.net/wiki"
-USERNAME = "your-email@example.com"
-API_TOKEN = "your-api-token"
-SPACE_KEY = "DevOps"
-ROOT_PARENT_ID = "3281485826"  # Artisight Helm Chart page ID
-DOCS_ROOT = "docs/Artisight Helm Chart"
+# Load config from environment (GitHub Actions inputs)
+config = get_config()
+
+BASE_URL = config["BASE_URL"]
+AUTH_USERNAME = config["AUTH_USERNAME"]
+AUTH_API_TOKEN = config["AUTH_API_TOKEN"]
+SPACE_KEY = config["SPACE_KEY"]
+FILES_PATH = config["FILES_PATH"]
+PARENT_ID = config["PARENT_ID"]
 
 confluence = Confluence(
     url=CONFLUENCE_URL,
