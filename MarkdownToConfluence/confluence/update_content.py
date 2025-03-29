@@ -37,7 +37,14 @@ def update_page_content(filename: str, old_filename=""):
         page_name, parent_name = convert_markdown.convert(filename, ROOT)
         parent_display = get_page_title_by_id(PARENT_ID) if not parent_name else parent_name
     except FileNotFoundError:
-        print(f"⚠️ Skipping missing file: {filename}")
+        print(f"🗑️ File {filename} no longer exists — deleting page in Confluence")
+        page_name = get_page_name_from_path(filename, ROOT)
+        try:
+            page_id = confluence_utils.get_page_id(page_name, SPACE_KEY, PARENT_ID)
+            confluence_utils.delete_page(page_id)
+            print(f"🧹 Deleted page '{page_name}'")
+        except PageNotFoundError:
+            print(f"⚠️ Page '{page_name}' not found — already deleted?")
         return None
 
     if old_filename:
